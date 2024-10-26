@@ -957,5 +957,26 @@ namespace CalamityMod.ILEditing
             c.Emit(OpCodes.Stloc, relativeMapTypeIndex);
         }
         #endregion
+
+        #region Remove Lava Drops From Lava Slimes
+        private static void RemoveLavaDropsFromLavaSlimes(ILContext il)
+        {
+            var cursor = new ILCursor(il);
+
+            // Label at the end of lava dropping logic.
+            ILLabel lavaDropEnd = null;
+
+            // Find the expert mode check done before dropping lava.
+            if (!cursor.TryGotoNext(MoveType.Before, i => i.MatchCall<Main>("get_expertMode"), i => i.MatchBrfalse(out lavaDropEnd)))
+            {
+                LogFailure("Remove Lava Drops From Lava Slimes", "Could not locate the expert mode check.");
+                return;
+            }
+
+            // Insert calamity config check
+            cursor.EmitDelegate(() => CalamityConfig.Instance.RemoveLavaDropsFromLavaSlimes);
+            cursor.EmitBrtrue(lavaDropEnd);
+        }
+        #endregion
     }
 }
